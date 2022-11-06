@@ -1,0 +1,36 @@
+type User @entity {
+  id: ID!
+  address: Bytes!
+}
+
+
+type Collection @entity {
+  id: ID!
+  address: Bytes!
+}
+
+
+
+type RoyaltyPayment @entity {
+  id: ID!
+  collection: Bytes! # address
+  tokenId: BigInt! # uint256
+  royaltyRecipient: Bytes! # address
+  currency: Bytes! # address
+  amount: BigInt! # uint256
+}
+
+type Transaction @entity(immutable: true) {
+  id: ID!
+  orderHash: Bytes! # bytes32
+  orderNonce: BigInt! # uint256
+  taker: Bytes! # address
+  maker: Bytes! # address
+  currency: Bytes! # address
+  collection: Bytes! # address
+  isTakerAsk: Boolean!
+  tokenId: BigInt! # uint256
+  amount: BigInt! # uint256
+  price: BigInt! # uint256
+  royaltyFee: RoyaltyPayment!
+}
