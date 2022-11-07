@@ -7,24 +7,24 @@ import {
   RoyaltyPayment,
   Transaction
 } from "../generated/schema"
-import { LooksRareExchange } from "../generated/LooksRareExchange/LooksRareExchange"
-
 
 export function handleRoyaltyPayment(event: RoyaltyPaymentEvent): void {
-  let entity = new RoyaltyPayment(
-    event.transaction.hash.toHex() + "-" + event.logIndex.toString()
-  )
-  entity.collection = event.params.collection
-  entity.tokenId = event.params.tokenId
-  entity.royaltyRecipient = event.params.royaltyRecipient
-  entity.currency = event.params.currency
-  entity.amount = event.params.amount
-  entity.save()
+  // id = transaction hash plus index
+  let id = event.transaction.hash.toHex() + "-" + event.logIndex.toString();
+  let royaltyFee = new RoyaltyPayment(id);
+
+  royaltyFee.collection = event.params.collection
+  royaltyFee.tokenId = event.params.tokenId
+  royaltyFee.royaltyRecipient = event.params.royaltyRecipient
+  royaltyFee.currency = event.params.currency
+  royaltyFee.amount = event.params.amount
+  royaltyFee.save()
 }
 
 export function handleTakerAsk(event: TakerAskEvent): void {
+  // orderhash + transaction hash
   let id = event.params.orderHash.toHex() + "-" + event.transaction.hash.toHex();
-  let transaction = new Transaction(id)
+  let transaction = new Transaction(id);
 
   transaction.orderHash = event.params.orderHash
   transaction.orderNonce = event.params.orderNonce
@@ -40,8 +40,9 @@ export function handleTakerAsk(event: TakerAskEvent): void {
 }
 
 export function handleTakerBid(event: TakerBidEvent): void {
+  // orderhash + transaction hash
   let id = event.params.orderHash.toHex() + "-" + event.transaction.hash.toHex();
-  let transaction = new Transaction(id)  
+  let transaction = new Transaction(id);
 
   transaction.orderHash = event.params.orderHash
   transaction.orderNonce = event.params.orderNonce
