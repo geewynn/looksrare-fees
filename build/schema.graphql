@@ -1,35 +1,52 @@
 type User @entity {
   id: ID!
-  address: Bytes!
+  # address: Bytes!
 }
 
 
 type Collection @entity {
   id: ID!
-  address: Bytes!
+  # address: Bytes!
+  items: [Item!] @derivedFrom(field: "collection")
 }
 
 
+type Item @entity {
+  id: ID! #collectionID-tokenId
+  collection: Collection!
+  royaltyPayments: [RoyaltyPayment!] @derivedFrom(field: "item")
+}
 
-type RoyaltyPayment @entity {
+
+type RoyaltyPayment @entity(immutable: true) {
   id: ID!
-  collection: Bytes! # address
+  collection: Collection! # address
+  item: Item! #collectionID-tokenId
   tokenId: BigInt! # uint256
-  royaltyRecipient: Bytes! # address
+  royaltyRecipient: User! # address
   currency: Bytes! # address
   amount: BigInt! # uint256
 }
+
 
 type Transaction @entity(immutable: true) {
   id: ID!
   orderHash: Bytes! # bytes32
   orderNonce: BigInt! # uint256
-  taker: Bytes! # address
-  maker: Bytes! # address
+  taker: User! # address
+  maker: User! # address
   currency: Bytes! # address
-  collection: Bytes! # address
+  collection: Collection! # address
   isTakerAsk: Boolean!
   tokenId: BigInt! # uint256
+  item: Item!
   amount: BigInt! # uint256
   price: BigInt! # uint256
+  royaltyPayment: RoyaltyPayment!
+}
+
+
+type TransactionRoyaltyPayment @entity(immutable: true){
+  id: ID! #TxHash
+  royaltyPayment: RoyaltyPayment!
 }

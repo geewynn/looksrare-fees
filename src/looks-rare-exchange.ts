@@ -1,58 +1,103 @@
 import {
   RoyaltyPayment as RoyaltyPaymentEvent,
   TakerAsk as TakerAskEvent,
-  TakerBid as TakerBidEvent
-} from "../generated/LooksRareExchange/LooksRareExchange"
+  TakerBid as TakerBidEvent,
+} from "../generated/LooksRareExchange/LooksRareExchange";
 import {
-  RoyaltyPayment,
-  Transaction
-} from "../generated/schema"
+  TransactionRoyaltyPayment,
+} from "../generated/schema";
+import {
+  createRoyaltyPayment,
+  createTransaction,
+  createTransactionRoyaltyPayment,
+  getOrCreateCollection,
+  getOrCreateItem,
+  getOrCreateUser,
+} from "./helpers";
 
 export function handleRoyaltyPayment(event: RoyaltyPaymentEvent): void {
-  // id = transaction hash plus index
-  let id = event.transaction.hash.toHex() + "-" + event.logIndex.toString();
-  let royaltyFee = new RoyaltyPayment(id);
+  let collection = getOrCreateCollection(event.params.collection);
+  let item = getOrCreateItem(event.params.collection, event.params.tokenId);
+  let user = getOrCreateUser(event.params.royaltyRecipient);
 
-  royaltyFee.collection = event.params.collection
-  royaltyFee.tokenId = event.params.tokenId
-  royaltyFee.royaltyRecipient = event.params.royaltyRecipient
-  royaltyFee.currency = event.params.currency
-  royaltyFee.amount = event.params.amount
-  royaltyFee.save()
+  let id = event.transaction.hash.toHex() + "-" + event.logIndex.toString();
+
+  let royaltyFee = createRoyaltyPayment(
+    id,
+    collection,
+    item,
+    event.params.tokenId,
+    user,
+    event.params.currency,
+    event.params.amount
+  );
+
+  createTransactionRoyaltyPayment(
+    event.transaction.hash.toHexString(),
+    royaltyFee
+  );
 }
 
 export function handleTakerAsk(event: TakerAskEvent): void {
-  // orderhash + transaction hash
-  let id = event.params.orderHash.toHex() + "-" + event.transaction.hash.toHex();
-  let transaction = new Transaction(id);
+  let taker = getOrCreateUser(event.params.taker);
+  let maker = getOrCreateUser(event.params.maker);
+  let id = event.transaction.hash.toHex();
+  let collectionId = event.params.collection.toHexString();
+  let itemId = event.params.collection
+    .toHexString()
+    .concat("-")
+    .concat(event.params.tokenId.toHexString());
 
-  transaction.orderHash = event.params.orderHash
-  transaction.orderNonce = event.params.orderNonce
-  transaction.taker = event.params.taker
-  transaction.maker = event.params.maker
-  transaction.currency = event.params.currency
-  transaction.collection = event.params.collection
-  transaction.isTakerAsk = true;
-  transaction.tokenId = event.params.tokenId
-  transaction.amount = event.params.amount
-  transaction.price = event.params.price
-  transaction.save()
+  let txRoyalty = TransactionRoyaltyPayment.load(id);
+  if (txRoyalty) {
+    createTransaction(
+      id,
+      event.params.orderHash,
+      event.params.orderNonce,
+      taker,
+      maker,
+      event.params.currency,
+      collectionId,
+      true,
+      event.params.tokenId,
+      itemId,
+      event.params.amount,
+      event.params.price,
+      txRoyalty,
+    );
+  }
 }
 
 export function handleTakerBid(event: TakerBidEvent): void {
-  // orderhash + transaction hash
-  let id = event.params.orderHash.toHex() + "-" + event.transaction.hash.toHex();
-  let transaction = new Transaction(id);
+  let taker = getOrCreateUser(event.params.taker);
+  let maker = getOrCreateUser(event.params.maker);
+  let collectionId = event.params.collection.toHexString();
+  let itemId = event.params.collection
+    .toHexString()
+    .concat("-")
+    .concat(event.params.tokenId.toHexString());
 
-  transaction.orderHash = event.params.orderHash
-  transaction.orderNonce = event.params.orderNonce
-  transaction.taker = event.params.taker
-  transaction.maker = event.params.maker
-  transaction.currency = event.params.currency
-  transaction.collection = event.params.collection
-  transaction.isTakerAsk = false;
-  transaction.tokenId = event.params.tokenId
-  transaction.amount = event.params.amount
-  transaction.price = event.params.price
-  transaction.save()
+  let txRoyalty = TransactionRoyaltyPayment.load(
+    event.transaction.hash.toHexString()
+  );
+
+  let id = event.transaction.hash.toHexString();
+
+  if (txRoyalty) {
+    createTransaction(
+      id,
+      event.params.orderHash,
+      event.params.orderNonce,
+      taker,
+      maker,
+      event.params.currency,
+      collectionId,
+      false,
+      event.params.tokenId,
+      itemId,
+      event.params.amount,
+      event.params.price,
+      txRoyalty,
+    );
+  }
 }

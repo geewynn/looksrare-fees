@@ -41,15 +41,6 @@ export class User extends Entity {
   set id(value: string) {
     this.set("id", Value.fromString(value));
   }
-
-  get address(): Bytes {
-    let value = this.get("address");
-    return value!.toBytes();
-  }
-
-  set address(value: Bytes) {
-    this.set("address", Value.fromBytes(value));
-  }
 }
 
 export class Collection extends Entity {
@@ -83,13 +74,79 @@ export class Collection extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get address(): Bytes {
-    let value = this.get("address");
-    return value!.toBytes();
+  get items(): Array<string> | null {
+    let value = this.get("items");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toStringArray();
+    }
   }
 
-  set address(value: Bytes) {
-    this.set("address", Value.fromBytes(value));
+  set items(value: Array<string> | null) {
+    if (!value) {
+      this.unset("items");
+    } else {
+      this.set("items", Value.fromStringArray(<Array<string>>value));
+    }
+  }
+}
+
+export class Item extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Item entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        `Entities of type Item must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("Item", id.toString(), this);
+    }
+  }
+
+  static load(id: string): Item | null {
+    return changetype<Item | null>(store.get("Item", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get collection(): string {
+    let value = this.get("collection");
+    return value!.toString();
+  }
+
+  set collection(value: string) {
+    this.set("collection", Value.fromString(value));
+  }
+
+  get royaltyPayments(): Array<string> | null {
+    let value = this.get("royaltyPayments");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toStringArray();
+    }
+  }
+
+  set royaltyPayments(value: Array<string> | null) {
+    if (!value) {
+      this.unset("royaltyPayments");
+    } else {
+      this.set("royaltyPayments", Value.fromStringArray(<Array<string>>value));
+    }
   }
 }
 
@@ -124,13 +181,22 @@ export class RoyaltyPayment extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get collection(): Bytes {
+  get collection(): string {
     let value = this.get("collection");
-    return value!.toBytes();
+    return value!.toString();
   }
 
-  set collection(value: Bytes) {
-    this.set("collection", Value.fromBytes(value));
+  set collection(value: string) {
+    this.set("collection", Value.fromString(value));
+  }
+
+  get item(): string {
+    let value = this.get("item");
+    return value!.toString();
+  }
+
+  set item(value: string) {
+    this.set("item", Value.fromString(value));
   }
 
   get tokenId(): BigInt {
@@ -142,13 +208,13 @@ export class RoyaltyPayment extends Entity {
     this.set("tokenId", Value.fromBigInt(value));
   }
 
-  get royaltyRecipient(): Bytes {
+  get royaltyRecipient(): string {
     let value = this.get("royaltyRecipient");
-    return value!.toBytes();
+    return value!.toString();
   }
 
-  set royaltyRecipient(value: Bytes) {
-    this.set("royaltyRecipient", Value.fromBytes(value));
+  set royaltyRecipient(value: string) {
+    this.set("royaltyRecipient", Value.fromString(value));
   }
 
   get currency(): Bytes {
@@ -219,22 +285,22 @@ export class Transaction extends Entity {
     this.set("orderNonce", Value.fromBigInt(value));
   }
 
-  get taker(): Bytes {
+  get taker(): string {
     let value = this.get("taker");
-    return value!.toBytes();
+    return value!.toString();
   }
 
-  set taker(value: Bytes) {
-    this.set("taker", Value.fromBytes(value));
+  set taker(value: string) {
+    this.set("taker", Value.fromString(value));
   }
 
-  get maker(): Bytes {
+  get maker(): string {
     let value = this.get("maker");
-    return value!.toBytes();
+    return value!.toString();
   }
 
-  set maker(value: Bytes) {
-    this.set("maker", Value.fromBytes(value));
+  set maker(value: string) {
+    this.set("maker", Value.fromString(value));
   }
 
   get currency(): Bytes {
@@ -246,13 +312,13 @@ export class Transaction extends Entity {
     this.set("currency", Value.fromBytes(value));
   }
 
-  get collection(): Bytes {
+  get collection(): string {
     let value = this.get("collection");
-    return value!.toBytes();
+    return value!.toString();
   }
 
-  set collection(value: Bytes) {
-    this.set("collection", Value.fromBytes(value));
+  set collection(value: string) {
+    this.set("collection", Value.fromString(value));
   }
 
   get isTakerAsk(): boolean {
@@ -273,6 +339,15 @@ export class Transaction extends Entity {
     this.set("tokenId", Value.fromBigInt(value));
   }
 
+  get item(): string {
+    let value = this.get("item");
+    return value!.toString();
+  }
+
+  set item(value: string) {
+    this.set("item", Value.fromString(value));
+  }
+
   get amount(): BigInt {
     let value = this.get("amount");
     return value!.toBigInt();
@@ -291,12 +366,58 @@ export class Transaction extends Entity {
     this.set("price", Value.fromBigInt(value));
   }
 
-  get royaltyFee(): string {
-    let value = this.get("royaltyFee");
+  get royaltyPayment(): string {
+    let value = this.get("royaltyPayment");
     return value!.toString();
   }
 
-  set royaltyFee(value: string) {
-    this.set("royaltyFee", Value.fromString(value));
+  set royaltyPayment(value: string) {
+    this.set("royaltyPayment", Value.fromString(value));
+  }
+}
+
+export class TransactionRoyaltyPayment extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id != null,
+      "Cannot save TransactionRoyaltyPayment entity without an ID"
+    );
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        `Entities of type TransactionRoyaltyPayment must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("TransactionRoyaltyPayment", id.toString(), this);
+    }
+  }
+
+  static load(id: string): TransactionRoyaltyPayment | null {
+    return changetype<TransactionRoyaltyPayment | null>(
+      store.get("TransactionRoyaltyPayment", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get royaltyPayment(): string {
+    let value = this.get("royaltyPayment");
+    return value!.toString();
+  }
+
+  set royaltyPayment(value: string) {
+    this.set("royaltyPayment", Value.fromString(value));
   }
 }
